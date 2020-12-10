@@ -16,6 +16,7 @@ import container_service_extension.def_.entity_service as def_entity_svc
 import container_service_extension.exceptions as cse_exceptions
 import container_service_extension.logger as logger
 import container_service_extension.pyvcloud_utils as vcd_utils
+import container_service_extension.shared_constants as shared_constants
 
 
 class DEClusterNative:
@@ -303,3 +304,18 @@ class DEClusterNative:
         put_response = self._native_cluster_api.put_cluster_acl(
             cluster_id, update_acl_values)
         return put_response
+
+    def list_share_entries(self, cluster_id):
+        result_count = page_num = 0
+        while True:
+            page_num += 1
+            response_body = self._native_cluster_api.get_single_page_cluster_acl(  # noqa: E501
+                cluster_id=cluster_id,
+                page=page_num,
+                page_size=cli_constants.CLI_ENTRIES_PER_PAGE)
+            result_total = response_body[shared_constants.PaginationKey.RESULT_TOTAL]  # noqa: E501
+            acl_values = response_body[shared_constants.PaginationKey.VALUES]
+            if acl_values == 0:
+                break
+            result_count += len(acl_values)
+            yield acl_values, result_count < result_total
