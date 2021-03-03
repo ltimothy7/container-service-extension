@@ -518,6 +518,8 @@ class VdcNetworkInfoKey(str, Enum):
 # Regex for ip: port
 IP_PORT_REGEX = '[0-9]+(?:\\.[0-9]+){3}(:[0-9]+)?'
 
-# Nat rules pagination constants
+# Default first page
 DEFAULT_FIRST_PAGE = 1
+
+# Nat rules pagination constants
 NAT_DEFAULT_PAGE_SIZE = 25
