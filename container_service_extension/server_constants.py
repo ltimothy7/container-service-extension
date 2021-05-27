@@ -109,6 +109,10 @@ TKGM_TEMPLATE_NAME_FRAGMENT = 'tkgm'
 TKGM_DEFAULT_POD_NETWORK_CIDR = '100.66.0.0/16'
 TKGM_DEFAULT_SERVICE_CIDR = '100.77.0.0/16'
 
+# Guest customization constants
+GC_ACCEPT_HEADER = 'application/vnd.vmware.vcloud.guestCustomizationStatusSection+json;version=35.0'  # noqa: E501
+GC_PATH_FRAGMENT = 'guestcustomizationstatus'
+
 
 @unique
 class NodeType(str, Enum):

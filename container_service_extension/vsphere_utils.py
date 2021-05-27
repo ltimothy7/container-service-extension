@@ -2,6 +2,7 @@
 # Copyright (c) 2019 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import time
 from urllib.parse import urlparse
 
 from cachetools import LRUCache
@@ -10,7 +11,12 @@ from pyvcloud.vcd.vapp import VApp
 from pyvcloud.vcd.vm import VM
 from vsphere_guest_run.vsphere import VSphere
 
+import container_service_extension.client.response_processor as response_processor  # noqa: E501
 from container_service_extension.logger import NULL_LOGGER
+from container_service_extension.logger import SERVER_LOGGER
+from container_service_extension.server_constants import GC_ACCEPT_HEADER
+from container_service_extension.server_constants import GC_PATH_FRAGMENT
+from container_service_extension.shared_constants import RequestMethod
 from container_service_extension.utils import NullPrinter
 
 cache = LRUCache(maxsize=1024)
@@ -114,3 +120,30 @@ def wait_until_tools_ready(vapp, vm_name, vsphere, callback=vgr_callback()):
     moid = vapp.get_vm_moid(vm_name)
     vm = vsphere.get_vm_by_moid(moid)
     vsphere.wait_until_tools_ready(vm, sleep=5, callback=callback)
+
+
+def wait_until_gc_complete(vapp, vm_name, client):
+    vm_href = vapp.get_vm(vm_name).get('href')
+    gc_uri = f'{vm_href}/{GC_PATH_FRAGMENT}'
+
+    start = time.time()
+    while True:
+        try:
+            response = client._do_request_prim(
+                method=RequestMethod.GET,
+                uri=gc_uri,
+                session=client._session,
+                accept_type=GC_ACCEPT_HEADER)
+            response = response_processor.process_response(response)
+            if response['guestCustStatus'] == 'GC_COMPLETE':
+                end = time.time()
+                elapsed_sec = end - start
+                msg = f'time for gc complete (sec): {elapsed_sec}'
+                print(msg)
+                SERVER_LOGGER.debug(msg)
+                return
+        except Exception as err:
+            SERVER_LOGGER.error(f'Error when getting gc status for vm '
+                                f'{vm_name}: {err}')
+            raise
+        time.sleep(15)
