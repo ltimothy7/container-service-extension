@@ -25,6 +25,7 @@ from container_service_extension.utils import NullPrinter
 from container_service_extension.utils import read_data_file
 from container_service_extension.vsphere_utils import get_vsphere
 from container_service_extension.vsphere_utils import vgr_callback
+from container_service_extension.vsphere_utils import wait_until_gc_complete
 from container_service_extension.vsphere_utils import wait_until_tools_ready
 
 
@@ -276,7 +277,13 @@ class TemplateBuilder():
         self.msg_update_callback.general(msg)
         self.logger.info(msg)
 
-        return VApp(self.client, href=vapp_sparse_resource.get('href'))
+        vapp = VApp(self.client, href=vapp_sparse_resource.get('href'))
+        wait_until_gc_complete(
+            vapp=vapp,
+            vm_name=self.temp_vm_name,
+            client=self.client)
+
+        return vapp
 
     def _customize_vm(self, vapp, vm_name):
         """Customize a vm in a VApp using customization script.
